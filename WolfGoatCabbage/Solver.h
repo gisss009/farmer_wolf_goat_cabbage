@@ -47,13 +47,9 @@ struct SearchResult {
 // одного раза). Проверка на цель - при порождении узла.
 SearchResult SolveBFS(State start, State goal, std::ostream* trace = nullptr);
 
-// Поиск в глубину на явном стеке. Проверка на цель - при извлечении из стека.
-//   checkRepeated = true  - ведётся список CLOSED, повторные состояния отбрасываются;
-//   checkRepeated = false - поиск на дереве без контроля повторов (для демонстрации
-//                           зацикливания); тогда обязательно depthLimit >= 0.
-//   depthLimit < 0 - без ограничения глубины.
-SearchResult SolveDFS(State start, State goal, bool checkRepeated = true,
-                      int depthLimit = -1, std::ostream* trace = nullptr);
+// Поиск в глубину на явном стеке со списком CLOSED (поиск на графе: раскрытое
+// состояние повторно не раскрывается). Проверка на цель - при извлечении из стека.
+SearchResult SolveDFS(State start, State goal, std::ostream* trace = nullptr);
 
 // Поиск с итеративным углублением: поиск в глубину с ограничением
 // limit = 0, 1, 2, ..., maxDepth. Повторы отсекаются только в пределах

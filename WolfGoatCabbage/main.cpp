@@ -19,7 +19,6 @@ struct Settings {
     State start = START_STATE;
     State goal = GOAL_STATE;
     bool trace = true;
-    int dfsTreeDepthLimit = 11;  // для DFS без контроля повторов
 };
 
 std::string Trim(const std::string& s) {
@@ -104,10 +103,7 @@ void PrintResult(const SearchResult& r) {
 }
 
 SearchResult RunBFS(const Settings& cfg, std::ostream* trace) { return SolveBFS(cfg.start, cfg.goal, trace); }
-SearchResult RunDFS(const Settings& cfg, std::ostream* trace) { return SolveDFS(cfg.start, cfg.goal, true, -1, trace); }
-SearchResult RunDFSTree(const Settings& cfg, std::ostream* trace) {
-    return SolveDFS(cfg.start, cfg.goal, false, cfg.dfsTreeDepthLimit, trace);
-}
+SearchResult RunDFS(const Settings& cfg, std::ostream* trace) { return SolveDFS(cfg.start, cfg.goal, trace); }
 SearchResult RunIDS(const Settings& cfg, std::ostream* trace) { return SolveIDS(cfg.start, cfg.goal, 50, trace); }
 
 using Runner = SearchResult (*)(const Settings&, std::ostream*);
@@ -170,13 +166,11 @@ void Compare(const Settings& cfg) {
     const Row rows[] = {
         { "BFS", RunBFS },
         { "DFS", RunDFS },
-        { "DFS без повторов", RunDFSTree },
         { "IDS", RunIDS },
     };
 
     std::cout << "\n===== Сравнение алгоритмов: " << StateCode(cfg.start) << " -> " << StateCode(cfg.goal)
-              << " =====\n"
-              << "(DFS без контроля повторов - с ограничением глубины " << cfg.dfsTreeDepthLimit << ")\n\n"
+              << " =====\n\n"
               << "  Алгоритм         | Длина | Раскрыто | Порождено | max OPEN | CLOSED | Время, мкс\n"
               << "  -----------------+-------+----------+-----------+----------+--------+-----------\n";
     for (const Row& row : rows) {
@@ -222,17 +216,6 @@ void ConfigureStates(Settings& cfg) {
             cfg.goal = s;
         }
     }
-    line = ReadLine("Ограничение глубины для DFS без контроля повторов [" +
-                    std::to_string(cfg.dfsTreeDepthLimit) + "]: ");
-    if (!line.empty()) {
-        try {
-            const int v = std::stoi(line);
-            if (v >= 0 && v <= 30) cfg.dfsTreeDepthLimit = v;
-            else std::cout << "Допустимо 0..30, значение не изменено.\n";
-        } catch (...) {
-            std::cout << "Ошибка формата, значение не изменено.\n";
-        }
-    }
     std::cout << "\n";
 }
 
@@ -246,8 +229,6 @@ void FullReport() {
     RunAndPrint(RunBFS, cfg);
     std::cout << "################ DFS ################\n";
     RunAndPrint(RunDFS, cfg);
-    std::cout << "######## DFS без контроля повторов (L = " << cfg.dfsTreeDepthLimit << ") ########\n";
-    RunAndPrint(RunDFSTree, cfg);
     std::cout << "################ IDS ################\n";
     RunAndPrint(RunIDS, cfg);
 
@@ -293,25 +274,23 @@ int main(int argc, char* argv[]) {
                   << "Трассировка: " << (cfg.trace ? "включена" : "выключена") << "\n\n"
                   << "  1 - BFS (поиск в ширину)\n"
                   << "  2 - DFS (поиск в глубину, со списком CLOSED)\n"
-                  << "  3 - DFS без контроля повторов, ограничение глубины " << cfg.dfsTreeDepthLimit << "\n"
-                  << "  4 - IDS (поиск с итеративным углублением)\n"
-                  << "  5 - Сравнить все алгоритмы\n"
-                  << "  6 - Показать пространство состояний\n"
-                  << "  7 - Найти все решения (простые пути)\n"
-                  << "  8 - Задать начальное / целевое состояние\n"
-                  << "  9 - Включить / выключить трассировку\n"
+                  << "  3 - IDS (поиск с итеративным углублением)\n"
+                  << "  4 - Сравнить все алгоритмы\n"
+                  << "  5 - Показать пространство состояний\n"
+                  << "  6 - Найти все решения (простые пути)\n"
+                  << "  7 - Задать начальное / целевое состояние\n"
+                  << "  8 - Включить / выключить трассировку\n"
                   << "  0 - Выход\n";
         const std::string choice = ReadLine("Ваш выбор: ");
 
         if (choice == "1") RunAndPrint(RunBFS, cfg);
         else if (choice == "2") RunAndPrint(RunDFS, cfg);
-        else if (choice == "3") RunAndPrint(RunDFSTree, cfg);
-        else if (choice == "4") RunAndPrint(RunIDS, cfg);
-        else if (choice == "5") Compare(cfg);
-        else if (choice == "6") PrintStateSpace();
-        else if (choice == "7") PrintAllSolutions(cfg);
-        else if (choice == "8") ConfigureStates(cfg);
-        else if (choice == "9") { cfg.trace = !cfg.trace; std::cout << "\n"; }
+        else if (choice == "3") RunAndPrint(RunIDS, cfg);
+        else if (choice == "4") Compare(cfg);
+        else if (choice == "5") PrintStateSpace();
+        else if (choice == "6") PrintAllSolutions(cfg);
+        else if (choice == "7") ConfigureStates(cfg);
+        else if (choice == "8") { cfg.trace = !cfg.trace; std::cout << "\n"; }
         else if (choice == "0" || choice == "exit") break;
         else std::cout << "Неизвестная команда.\n\n";
     }

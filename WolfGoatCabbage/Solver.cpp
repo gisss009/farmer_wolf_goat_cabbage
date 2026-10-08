@@ -143,9 +143,9 @@ SearchResult SolveBFS(State start, State goal, std::ostream* trace) {
 
 // ---------------------------------------------------------------- DFS ----
 
-SearchResult SolveDFS(State start, State goal, bool checkRepeated, int depthLimit, std::ostream* trace) {
+SearchResult SolveDFS(State start, State goal, std::ostream* trace) {
     SearchResult r;
-    r.algorithm = checkRepeated ? "DFS" : "DFS (без контроля повторов)";
+    r.algorithm = "DFS";
 
     std::vector<Node> tree;
     tree.push_back(Node{ start, -1, Move{}, 0 });
@@ -161,7 +161,7 @@ SearchResult SolveDFS(State start, State goal, bool checkRepeated, int depthLimi
         open.pop_back();
         const Node node = tree[idx];
 
-        if (checkRepeated && closed[node.state]) {
+        if (closed[node.state]) {
             // Состояние было положено в стек дважды и уже раскрыто по другому пути.
             if (trace) *trace << "Узел #" << idx << " [" << StateCode(node.state) << "] уже раскрыт - пропускаем\n";
             continue;
@@ -178,14 +178,9 @@ SearchResult SolveDFS(State start, State goal, bool checkRepeated, int depthLimi
             if (trace) *trace << "  Узел #" << idx << " - целевой. Поиск завершён.\n";
             return r;
         }
-        if (depthLimit >= 0 && node.depth >= depthLimit) {
-            if (trace) *trace << "  Достигнуто ограничение глубины " << depthLimit << " - узел не раскрывается\n";
-            continue;
-        }
-
         ++r.stats.expanded;
         r.stats.maxDepth = std::max(r.stats.maxDepth, node.depth);
-        if (checkRepeated) closed[node.state] = true;
+        closed[node.state] = true;
 
         std::vector<int> children;
         for (const Transition& t : AllTransitions(node.state)) {
@@ -194,7 +189,7 @@ SearchResult SolveDFS(State start, State goal, bool checkRepeated, int depthLimi
                 if (trace) *trace << "    " << TransitionText(t) << "  отброшен: " << DangerReason(t.to) << "\n";
                 continue;
             }
-            if (checkRepeated && closed[t.to]) {
+            if (closed[t.to]) {
                 ++r.stats.rejectedRepeated;
                 if (trace) *trace << "    " << TransitionText(t) << "  отброшен: уже раскрыто\n";
                 continue;
@@ -209,10 +204,9 @@ SearchResult SolveDFS(State start, State goal, bool checkRepeated, int depthLimi
         for (auto it = children.rbegin(); it != children.rend(); ++it) open.push_back(*it);
 
         r.stats.maxFrontier = std::max(r.stats.maxFrontier, open.size());
-        if (trace) {
-            *trace << "  OPEN (стек, вершина справа): " << StateList(open, [&](int i) { return tree[i].state; }) << "\n";
-            if (checkRepeated) *trace << "  CLOSED:                      " << ClosedList(closed) << "\n";
-        }
+        if (trace)
+            *trace << "  OPEN (стек, вершина справа): " << StateList(open, [&](int i) { return tree[i].state; }) << "\n"
+                   << "  CLOSED:                      " << ClosedList(closed) << "\n";
     }
 
     r.stats.closedSize = CountTrue(closed);
